@@ -20,13 +20,14 @@ public class FileLogWriter implements LogWriter {
         Objects.requireNonNull(dir);
 
         this.sequenceNumber = sequenceNumber;
-        this.file = new File(dir + "/wal_" + sequenceNumber);
+        this.file = new File(dir + "/db-wal");
         this.fileChannel = new FileOutputStream(this.file, true).getChannel();
     }
 
-    public synchronized void append(DataRecord record) throws IOException {
+    public void append(DataRecord record) throws IOException {
 
-        LogRecord logRecord = new LogRecord(record.toByteArray());
+        LogRecord logRecord = new LogRecord(record.toByteArray(), sequenceNumber);
+        sequenceNumber++;
 
         ByteBuffer bb = logRecord.toByteBuffer();
         bb.flip();

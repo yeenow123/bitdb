@@ -20,30 +20,33 @@ public class FileLogReader implements LogReader {
     }
 
     @Override
-    public DataRecord readRecord() throws Exception {
+    public LogRecord readRecord() throws Exception {
 
         ByteBuffer bb = ByteBuffer.allocate(LogRecord.LENGTH_HEADER_SIZE);
-        int bytesRead = readBytesSpecific(fileChannel, bb);
+        int bytesRead = readBytes(fileChannel, bb);
         if (bytesRead == -1) return null;
+
+        int dataLength = bb.getInt();
 
         bb = ByteBuffer.allocate(LogRecord.CHECKSUM_HEADER_SIZE);
-        bytesRead = readBytesSpecific(fileChannel, bb);
+        bytesRead = readBytes(fileChannel, bb);
         if (bytesRead == -1) return null;
 
-        bb = ByteBuffer.allocate(LogRecord.CHECKSUM_HEADER_SIZE);
-        bytesRead = readBytesSpecific(fileChannel, bb);
+        bb = ByteBuffer.allocate(LogRecord.SEQUENCE_HEADER_SIZE);
+        bytesRead = readBytes(fileChannel, bb);
         if (bytesRead == -1) return null;
 
-        try {
-            LogRecord rec = LogRecord.fromChannel(fileChannel);
-        } catch (IOException e) {
+        int seqNo = bb.getInt();
 
-        }
+        bb = ByteBuffer.allocate(dataLength);
+        bytesRead = readBytes(fileChannel, bb);
+        if (bytesRead == -1) return null;
 
+        LogRecord rec = new LogRecord(bb.array(), seqNo);
 
         offset = fileChannel.position();
 
-        return new DataRecord(rec.data);
+        return rec;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class FileLogReader implements LogReader {
         return offset;
     }
 
-    private int readBytesSpecific(FileChannel channel, ByteBuffer bb) {
+    private int readBytes(FileChannel channel, ByteBuffer bb) {
         int bytesRead;
         try {
             bytesRead = channel.read(bb);
@@ -63,30 +66,4 @@ public class FileLogReader implements LogReader {
         return bytesRead;
     }
 
-    private int readBytes(FileChannel channel) {
-        ByteBuffer lengthBB = ByteBuffer.allocate(LogRecord.LENGTH_HEADER_SIZE);
-        channel.read(lengthBB);
-        lengthBB.flip();
-
-        int dataLength = lengthBB.getInt();
-
-        ByteBuffer checksumBB = ByteBuffer.allocate(LogRecord.CHECKSUM_HEADER_SIZE);
-        channel.read(checksumBB);
-        checksumBB.flip();
-
-        long checksum = checksumBB.getLong();
-
-        ByteBuffer dataBB = ByteBuffer.allocate(dataLength);
-        channel.read(dataBB);
-        dataBB.flip();
-
-        byte[] dataRead = dataBB.array();
-        long dataChecksum = Utils.calculateChecksum(dataRead);
-
-        if (checksum != dataChecksum) {
-            throw new Exception("Checksum mismatch!");
-        }
-
-        return new LogRecord(dataBB.array());
-    }
 }

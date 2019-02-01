@@ -33,11 +33,11 @@ public class WALTest {
         FileInputStream fis = new FileInputStream(writer.getFile());
         FileLogReader reader = new FileLogReader(fis.getChannel());
 
-        DataRecord deserializedRecord1 = reader.readRecord();
-        DataRecord deserializedRecord2 = reader.readRecord();
+        LogRecord deserializedRecord1 = reader.readRecord();
+        LogRecord deserializedRecord2 = reader.readRecord();
 
-        assertTrue(Arrays.equals(record1.toByteArray(), deserializedRecord1.toByteArray()));
-        assertTrue(Arrays.equals(record2.toByteArray(), deserializedRecord2.toByteArray()));
+        assertTrue(Arrays.equals(record1.toByteArray(), deserializedRecord1.data));
+        assertTrue(Arrays.equals(record2.toByteArray(), deserializedRecord2.data));
 
         reader.readRecord();
     }
