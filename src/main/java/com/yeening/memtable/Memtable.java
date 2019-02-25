@@ -1,15 +1,14 @@
 package com.yeening.memtable;
 
+import java.util.Map;
 import java.util.TreeMap;
 
 public class Memtable {
 
     private TreeMap<SortKey, byte[]> treeMap;
-    private int lastSequenceNumber;
 
-    public Memtable(int seqNumber) {
+    public Memtable() {
         this.treeMap = new TreeMap<>(new SortKeyComparator());
-        this.lastSequenceNumber = seqNumber;
     }
 
     public void set(int seqNumber, byte[] key, byte[] value) {
@@ -18,7 +17,15 @@ public class Memtable {
         treeMap.put(s, value);
     }
 
-    public byte[] get(byte[] key) {
+    public byte[] get(byte[] key, int lastSequence) {
+        SortKey sk = new SortKey(key, lastSequence);
 
+        Map.Entry<SortKey, byte[]> entry = treeMap.ceilingEntry(sk);
+
+        if (entry == null) {
+            return null;
+        } else {
+            return entry.getValue();
+        }
     }
 }
